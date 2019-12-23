@@ -219,6 +219,25 @@
                 this.setState(state => ({
                     events: [...state.events, newItem]
                 }));
+
+                var resource = {
+                    "summary": "Appointment",
+                    "location": "Somewhere",
+                    "start": {
+                        "dateTime": "2019-12-16T10:00:00.000-07:00"
+                    },
+                    "end": {
+                        "dateTime": "2019-12-16T10:25:00.000-07:00"
+                    }
+                };
+                var request = gapi.client.calendar.events.insert({
+                    'calendarId': 'prateek.vaishnav@47billion.com',
+                    'resource': resource
+                });
+                request.execute(function (resp) {
+                    console.log('resp add event',resp);
+                });
+
                 this.navigate(this.monthCal.instance, state.eventDate[0]);
             }
 
