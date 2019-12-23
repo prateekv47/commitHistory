@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+
+    <script>
+        // Ignore this in your implementation
+        window.isMbscDemo = true;
+    </script>
+
+    <title>Add/delete event</title>
+
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/prop-types@15.6.0/prop-types.min.js"></script>
+    <script src="https://unpkg.com/create-react-class@15.6.2/create-react-class.min.js"></script>
+    <script src="https://unpkg.com/react-addons-update/react-addons-update.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+
+    <!-- Mobiscroll JS and CSS Includes -->
+    <link rel="stylesheet" href="css/mobiscroll.react.min.css">
+    <script src="js/mobiscroll.react.min.js"></script>
+
+    <style type="text/css">
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .md-add-event-demo {
+            position: absolute;
+            height: 100%;
+        }
+
+        .md-add-event-demo .mbsc-row {
+            height: 100%;
+        }
+
+        .md-add-event-demo .md-col-right {
+            overflow: auto;
+            height: 100%;
+            border-left: 1px solid #ccc;
+        }
+
+        .md-add-event-demo .md-delete-btn {
+            margin: 0;
+            position: absolute;
+            right: 10px;
+            top: 8px;
+            z-index: 1;
+            transition: background-color .3s ease-out;
+        }
+
+        .mbsc-material .md-add-event-demo .md-delete-btn {
+            top: 6px;
+        }
+
+        .mbsc-windows .md-add-event-demo .md-delete-btn {
+            top: 10px;
+        }
+
+        .md-add-event-demo .md-delete-btn.mbsc-btn-outline.mbsc-btn:not(:disabled):not(.mbsc-active):hover:hover {
+            background: #f5504e;
+            color: #fff;
+        }
+
+        .mbsc-rtl .md-add-event-demo .md-delete-btn {
+            right: auto;
+            left: 10px;
+        }
+
+        .md-add-event-popup {
+            max-width: 400px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div mbsc-page class="demo-add-delete-event">
+        <div id="content"></div>
+    </div>
+    <script src="https://apis.google.com/js/platform.js"></script>
+
+    <script>
+        mobiscroll.settings = {
+            theme: 'windows',
+            themeVariant: 'light',
+            lang: 'en'
+        };
+    </script>
+
+    <script type="text/babel">
+
+        mobiscroll.settings = {
+            lang: 'en',
+            theme: 'windows',
+            themeVariant: 'light'
+        };
+
+        const popupBtn = [{
+            text: 'Add event',
+            handler: 'set'
+        },
+            'cancel'
+        ];
+
+        const monthView = {
+            calendar: { type: 'month' }
+        };
+
+        const dayView = {
+            eventList: { type: 'day' }
+        };
+
+        const respRange = {
+            large: {
+                touchUi: false
+            }
+        };
+
+        const now = new Date();
+        const btn = '<button type="button" class="mbsc-btn mbsc-btn-outline mbsc-btn-danger md-delete-btn">Delete</button>';
+        let id = 5;
+        let preventSet = false;
+
+        class App extends React.Component {
+            constructor(props) {
+                super(props);
+
+                this.state = {
+                    eventText: '',
+                    eventDesc: '',
+                    eventDate: [now, new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 2)],
+                    controls: ['date', 'time'],
+                    dateWheels: '|D M d|',
+                    allDay: false,
+                    isFree: 'busy',
+                    events: [{
+                        id: 1,
+                        start: new Date(now.getFullYear(), now.getMonth(), 8, 13),
+                        end: new Date(now.getFullYear(), now.getMonth(), 8, 13, 30),
+                        text: 'Lunch @ Butcher\'s' + btn,
+                        color: '#26c57d'
+                    }, {
+                        id: 2,
+                        start: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15),
+                        end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16),
+                        text: 'General orientation' + btn,
+                        color: '#fd966a'
+                    }, {
+                        id: 3,
+                        start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 18),
+                        end: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 22),
+                        text: 'Dexter BD' + btn,
+                        color: '#37bbe4'
+                    }, {
+                        id: 4,
+                        start: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 10, 30),
+                        end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 11, 30),
+                        text: 'Stakeholder mtg.' + btn,
+                        color: '#d00f0f'
+                    }]
+                };
+            }
+
+            textChange = (event) => {
+                this.setState({
+                    eventText: event.target.value
+                });
+            }
+
+            descChange = (event) => {
+                this.setState({
+                    eventDesc: event.target.value
+                });
+            }
+
+            allDayChange = (event) => {
+                const checked = event.target.checked;
+                this.setState({
+                    allDay: checked,
+                    controls: checked ? ['date'] : ['date', 'time'],
+                    dateWheels: checked ? 'MM dd yy' : '|D M d|'
+                });
+            }
+
+            dateChange = (event, inst) => {
+                this.setState({
+                    eventDate: inst.getVal()
+                });
+            }
+
+            isFreeChange = (event) => {
+                this.setState({
+                    isFree: event.target.value
+                });
+            }
+
+            showAddEventPopup = () => {
+                this.popup.instance.show();
+            }
+
+            addEvent = (event, inst) => {
+                const state = this.state;
+                const newItem = {
+                    id: id,
+                    start: state.eventDate[0],
+                    end: state.eventDate[1],
+                    text: (state.eventText || 'New Event') + btn,
+                    title: state.eventText || 'New Event',
+                    description: state.eventDesc,
+                    allDay: state.allDay,
+                    free: state.isFree === 'free'
+                };
+                this.setState(state => ({
+                    events: [...state.events, newItem]
+                }));
+                this.navigate(this.monthCal.instance, state.eventDate[0]);
+            }
+
+            onPageChange = (event, inst) => {
+                const day = event.firstDay;
+
+                preventSet = true;
+                this.setState({
+                    eventDate: [day, new Date(day.getFullYear(), day.getMonth(), day.getDate(), day.getHours() + 2)]
+                });
+                this.navigate(this.monthCal.instance, day);
+            }
+
+            onEventSelect = (event, inst) => {
+                if (event.domEvent.target.classList.contains('md-delete-btn')) {
+                    mobiscroll.confirm({
+
+                        title: 'Confirm Deletion',
+                        message: 'Are you sure you want to delete this item?',
+                        okText: 'Delete',
+                        callback: (res) => {
+                            if (res) {
+                                //remove element by id
+                                const events = this.state.events.slice(0);
+                                const index = events.findIndex(item => item.id === event.event.id);
+
+                                events.splice(index, 1);
+                                this.setState({
+                                    events: events
+                                });
+
+                                mobiscroll.toast({
+
+                                    message: 'Deleted'
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+
+            onSetDate = (event) => {
+                if (!preventSet && this.dayCal != undefined) {
+                    this.navigate(this.dayCal.instance, event.date);
+                }
+                preventSet = false;
+            }
+
+            navigate(inst, val) {
+                if (inst) {
+                    inst.navigate(val);
+                }
+            }
+
+            setMonthCal = (comp) => {
+                this.monthCal = comp;
+            }
+
+            setDayCal = (comp) => {
+                this.dayCal = comp;
+            }
+
+            setPopup = (comp) => {
+                this.popup = comp;
+            }
+
+            setRange = (comp) => {
+                this.range = comp;
+            }
+
+            render() {
+                return (
+                    <div>
+                        <mobiscroll.Form>
+                            <div className="mbsc-grid md-add-event-demo">
+                                <div className="mbsc-row mbsc-no-padding">
+                                    <div className="mbsc-col-md-4 mbsc-col-12">
+                                        <mobiscroll.Eventcalendar
+                                            ref={this.setMonthCal}
+                                            display="inline"                    // Specify display mode like: display="bottom" or omit setting to use default
+                                            view={monthView}                    // More info about view: https://docs.mobiscroll.com/4-9-1/react/eventcalendar#opt-view
+                                            data={this.state.events}            // More info about data: https://docs.mobiscroll.com/4-9-1/react/eventcalendar#opt-data
+                                            onSetDate={this.onSetDate}          // More info about onSetDate: https://docs.mobiscroll.com/4-9-1/react/eventcalendar#event-onSetDate
+                                        />
+                                        <div className="mbsc-btn-group-block">
+                                            <mobiscroll.Button onClick={this.showAddEventPopup}>Add New Event</mobiscroll.Button>
+                                        </div>
+                                    </div>
+                                    <div className="mbsc-col-md-8 mbsc-col-12 md-col-right">
+                                        <mobiscroll.Eventcalendar
+                                            ref={this.setDayCal}
+                                            display="inline"                    // Specify display mode like: display="bottom" or omit setting to use default
+                                            layout="liquid"                     // More info about layout: https://docs.mobiscroll.com/4-9-1/react/eventcalendar#opt-layout
+                                            view={dayView}                      // More info about view: https://docs.mobiscroll.com/4-9-1/react/eventcalendar#opt-view
+                                            data={this.state.events}            // More info about data: https://docs.mobiscroll.com/4-9-1/react/eventcalendar#opt-data
+                                            onPageChange={this.onPageChange}    // More info about onPageChange: https://docs.mobiscroll.com/4-9-1/react/eventcalendar#event-onPageChange
+                                            onEventSelect={this.onEventSelect}  // More info about onEventSelect: https://docs.mobiscroll.com/4-9-1/react/eventcalendar#event-onEventSelect
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </mobiscroll.Form>
+                        <mobiscroll.Popup
+                            ref={this.setPopup}
+                            display="center"                                    // Specify display mode like: display="bottom" or omit setting to use default
+                            cssClass="mbsc-no-padding"
+                            buttons={popupBtn}                                  // More info about buttons: https://docs.mobiscroll.com/4-9-1/react/eventcalendar#opt-buttons
+                            headerText="Add new event"                          // More info about headerText: https://docs.mobiscroll.com/4-9-1/react/eventcalendar#opt-headerText
+                            onSet={this.addEvent}
+                        >
+                            <mobiscroll.Form>
+                                <mobiscroll.FormGroup>
+                                    <mobiscroll.Form.Label>
+                                        Title
+                                    <input value={this.state.eventText} onChange={this.textChange} />
+                                    </mobiscroll.Form.Label>
+                                    <mobiscroll.Textarea value={this.state.eventDesc} onChange={this.descChange}>
+                                        Description
+                                </mobiscroll.Textarea>
+                                </mobiscroll.FormGroup>
+                                <mobiscroll.FormGroup>
+                                    <mobiscroll.Switch value={this.state.allDay} onChange={this.allDayChange}>
+                                        All-day
+                                </mobiscroll.Switch>
+                                    <mobiscroll.Form.Label>
+                                        Starts
+                                        <input id="startDate" />
+                                    </mobiscroll.Form.Label>
+                                    <mobiscroll.Form.Label>
+                                        Ends
+                                        <input id="endDate" />
+                                    </mobiscroll.Form.Label>
+                                    <mobiscroll.Range
+                                        ref={this.setRange}
+                                        type="hidden"
+                                        controls={this.state.controls}
+                                        dateWheels={this.state.dateWheels}
+                                        startInput="#startDate"
+                                        endInput="#endDate"
+                                        tabs={false}
+                                        responsive={respRange}
+                                        value={this.state.eventDate}
+                                        onSet={this.dateChange}
+                                        showSelector={false}
+                                    />
+                                    <mobiscroll.Segmented name="group" value="false" checked={this.state.isFree === 'busy'} onChange={this.isFreeChange}>
+                                        Show as busy
+                                </mobiscroll.Segmented>
+                                    <mobiscroll.Segmented name="group" value="true" checked={this.state.isFree === 'free'} onChange={this.isFreeChange}>
+                                        Show as free
+                                </mobiscroll.Segmented>
+                                </mobiscroll.FormGroup>
+                            </mobiscroll.Form>
+                        </mobiscroll.Popup>
+                    </div>
+                );
+            }
+        }
+
+        ReactDOM.render(
+            <App />,
+            document.getElementById('content')
+        );
+    </script>
+    
+</body>
+
+</html>
